@@ -10,7 +10,7 @@ setuptools.setup(
     author_email='a.kononov1@g.nsu.ru',
     description='A set of utilities for creating simple voice assistants',
     long_description=long_description,
-    long_description_content_type='command/markdown',
+    long_description_content_type='text/markdown',
     url="https://github.com/kononovarseniy/r7assistant",
     packages=setuptools.find_packages(),
     classifiers=[
