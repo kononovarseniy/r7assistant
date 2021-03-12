@@ -8,7 +8,7 @@ setuptools.setup(
     version='0.0.1',
     author='Arseniy Kononov',
     author_email='a.kononov1@g.nsu.ru',
-    description='Simple voice assistant',
+    description='A set of utilities for creating simple voice assistants',
     long_description=long_description,
     long_description_content_type='command/markdown',
     url="https://github.com/kononovarseniy/r7assistant",
