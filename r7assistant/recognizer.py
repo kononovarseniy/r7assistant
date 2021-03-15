@@ -4,7 +4,8 @@ from typing import List
 import pocketsphinx as ps
 from jsgf import RootGrammar, PublicRule, Literal
 
-from r7assistant.module import Keyword, ModuleCommand
+from r7assistant.module import ModuleCommand
+from r7assistant.decoder import Keyword
 
 
 def build_grammar(commands: List[ModuleCommand]) -> str:

@@ -2,17 +2,13 @@ import inspect
 from dataclasses import dataclass
 from typing import List, Callable
 
+from r7assistant.decoder import Keyword
+
 
 @dataclass
 class ModuleCommand:
     phrase: str
     function: Callable
-
-
-@dataclass
-class Keyword:
-    keyword: str
-    threshold: int
 
 
 def command(phrase: str):
