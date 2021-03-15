@@ -20,14 +20,14 @@ class Recognizer:
         pass
 
 
-class RecognizerMeta:
+class RecognizerFactory:
     @abstractmethod
-    def init(self, module_name: str, module: Any) -> Recognizer:
+    def create(self, module_name: str, module: Any) -> Recognizer:
         pass
 
 
 class Module:
-    recognizer: RecognizerMeta
+    recognizer: RecognizerFactory
 
 
 @dataclass
@@ -52,11 +52,11 @@ class Assistant:
 
         if module_type in self._loaded_modules:
             name = self._loaded_modules[module_type]
-            recognizer = module.recognizer.init(name, module)
+            recognizer = module.recognizer.create(name, module)
         else:
-            name = f'module-{len(self._loaded_modules)}'
+            name = f'module-{len(self._loaded_modules)}-{module_type.__name__}'
             self._loaded_modules[module_type] = name
-            recognizer = module.recognizer.init(name, module)
+            recognizer = module.recognizer.create(name, module)
             recognizer.register(self.decoder)
 
         self._module_stack.append(ActiveModuleInfo(name, recognizer))

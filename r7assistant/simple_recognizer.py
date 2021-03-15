@@ -3,7 +3,7 @@ from typing import Callable, List, Optional, Any
 
 from jsgf import RootGrammar, PublicRule, Literal
 
-from r7assistant.assistant import Assistant, Recognizer, RecognizerMeta
+from r7assistant.assistant import Assistant, Recognizer, RecognizerFactory
 from r7assistant.decoder import Keyword, KeywordList, Decoder
 
 
@@ -17,7 +17,7 @@ def _call_method(self, func: Optional[Callable]):
     return func(self) if func is not None else None
 
 
-class SimpleRecognizer(RecognizerMeta):
+class SimpleRecognizer(RecognizerFactory):
     def __init__(self, phrase_prefix: str = ''):
         self._phrase_prefix = phrase_prefix
         self._keywords: List[Keyword] = list()
@@ -43,7 +43,7 @@ class SimpleRecognizer(RecognizerMeta):
     def on_not_recognized(self, func):
         self._on_not_recognized = func
 
-    def init(self, module_name: str, module: Any):
+    def create(self, module_name: str, module: Any):
         commands = list(self._commands)
         grammar = RootGrammar(PublicRule(f'cmd-{i}', Literal(cmd.phrase)) for i, cmd in enumerate(commands))
         keywords = KeywordList(self._keywords)
