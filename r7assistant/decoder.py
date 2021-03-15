@@ -58,6 +58,7 @@ class Decoder:
             f.write(grammar.compile())
 
         self.decoder.set_jsgf_file(_make_grammar_name(name), str(grammar_file))
+        self._registered_grammars.add(name)
 
     def register_keywords(self, name: str, keywords: KeywordList) -> None:
         if name in self._registered_keyword_lists:
@@ -67,6 +68,7 @@ class Decoder:
             f.write(keywords.compile())
 
         self.decoder.set_kws(_make_keywords_name(name), str(keywords_file))
+        self._registered_keyword_lists.add(name)
 
     def _decode(self, search: str, data: bytes) -> str:
         self.decoder.set_search(search)

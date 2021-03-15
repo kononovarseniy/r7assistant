@@ -2,7 +2,9 @@ import inspect
 from dataclasses import dataclass
 from typing import List, Callable
 
-from r7assistant.decoder import Keyword
+from jsgf import Grammar, RootGrammar, PublicRule, Literal
+
+from r7assistant.decoder import Keyword, KeywordList
 
 
 @dataclass
@@ -19,7 +21,7 @@ def command(phrase: str):
 
 
 class Module:
-    __keywords__: List[Keyword] = list()
+    __keywords__: KeywordList
 
     def __init_subclass__(cls, /, phrase_prefix: str = '', **kwargs):
         super().__init_subclass__(**kwargs)
@@ -31,12 +33,16 @@ class Module:
                 cls.__commands__.append(member)
 
     @property
+    def keywords(self) -> KeywordList:
+        return self.__keywords__
+
+    @property
     def commands(self) -> List[ModuleCommand]:
         return self.__commands__
 
     @property
-    def keywords(self) -> List[Keyword]:
-        return self.__keywords__
+    def grammar(self) -> Grammar:
+        return RootGrammar(PublicRule(f'cmd-{i}', Literal(cmd.phrase)) for i, cmd in enumerate(self.commands))
 
     def execute_command(self, phrase: str, state) -> bool:
         for cmd in self.commands:

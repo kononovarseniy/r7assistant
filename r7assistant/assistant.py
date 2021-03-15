@@ -4,9 +4,9 @@ from pathlib import Path
 from queue import Queue
 from typing import Dict, Optional, Type, Deque
 
+from r7assistant.decoder import Decoder
 from r7assistant.microphone import Microphone
 from r7assistant.module import Module
-from r7assistant.recognizer import Recognizer
 
 
 class RecognitionError(Exception):
@@ -18,13 +18,11 @@ class NoKeywordError(RecognitionError):
 
 
 class Assistant:
-    def __init__(self, tmp_dir: Path, recognizer: Recognizer):
-        self.recognizer = recognizer
+    def __init__(self, decoder: Decoder):
+        self.decoder = decoder
         self.microphone: Optional[Microphone] = None
         self._module_stack: Deque[Module] = collections.deque()
         self._loaded_modules: Dict[Type[Module], str] = dict()
-
-        self.tmp_dir = tmp_dir
 
     @property
     def active_module(self) -> Module:
@@ -35,7 +33,8 @@ class Assistant:
         # Load module
         if module_type not in self._loaded_modules:
             name = f'module-{len(self._loaded_modules)}'
-            self.recognizer.add_mode(name, value.keywords, value.commands, self.tmp_dir)
+            self.decoder.register_keywords(name, value.keywords)
+            self.decoder.register_grammar(name, value.grammar)
             self._loaded_modules[module_type] = name
 
         self._module_stack.append(value)
@@ -45,10 +44,10 @@ class Assistant:
 
     def recognize(self, audio: bytes) -> str:
         mode = self._loaded_modules[type(self.active_module)]
-        if not self.recognizer.recognize_keywords(mode, audio):
+        if not self.decoder.decode_keywords(mode, audio):
             raise NoKeywordError
         else:
-            text = self.recognizer.recognize_grammar(mode, audio)
+            text = self.decoder.decode_grammar(mode, audio)
             if not text:
                 raise RecognitionError
             else:
@@ -71,11 +70,11 @@ def run_assistant(hmm_file: Path,
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     # Create recognizer
-    recognizer = Recognizer(hmm_file, dict_file)
+    decoder = Decoder(hmm_file, dict_file, tmp_dir)
     microphone = Microphone()
 
     # Start assistant
-    assistant = Assistant(tmp_dir, recognizer)
+    assistant = Assistant(decoder)
     assistant.microphone = microphone
     assistant.push_active_module(default_module)
 

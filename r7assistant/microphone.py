@@ -7,7 +7,7 @@ from typing import Callable
 
 import sounddevice as sd
 
-from r7assistant.recognizer import Recognizer
+from r7assistant.decoder import Decoder
 
 
 class Microphone:
@@ -58,8 +58,8 @@ class Microphone:
                         state = 0
                         print('-> 0')
 
-        stream = sd.RawInputStream(dtype='int16', samplerate=Recognizer.SAMPLERATE, blocksize=1024,
-                                   channels=Recognizer.CHANNELS,
+        stream = sd.RawInputStream(dtype='int16', samplerate=Decoder.SAMPLERATE, blocksize=1024,
+                                   channels=Decoder.CHANNELS,
                                    callback=audio_callback)
 
         min_speech_blocks = int(math.ceil(self.speech_threshold * stream.samplerate / stream.blocksize))
