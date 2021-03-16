@@ -18,7 +18,7 @@ def say_text(state, text: str):
         os.system(f"echo '{text}' | festival --tts")
 
 
-class DefaultMode(Module, phrase_prefix='oleg'):  # Each phrase should start with the word 'Oleg'
+class DefaultMode(Module, phrase_prefix='oleg'):  # Each phrase should start with the _word 'Oleg'
     __keywords__ = [Keyword('oleg', -30)]  # -30 is the keyword recognition threshold
 
     @command('say hello')

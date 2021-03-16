@@ -1,11 +1,13 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Any
+from typing import Callable, List, Optional, Any, Union
 
+import pyparsing
 from jsgf import RootGrammar, PublicRule, Literal
 
 from r7assistant.assistant import Assistant, Recognizer, RecognizerFactory, Module
 from r7assistant.decoder import Keyword, KeywordList, Decoder
+from r7assistant.grammar import Expression, And
 
 
 @dataclass
@@ -120,3 +122,76 @@ class SimpleRecognizerFactory(KeywordRecognizerFactory):
                                 list(self._commands), self.keyword_list,
                                 self.on_no_keywords,
                                 self.on_not_recognized)
+
+
+@dataclass
+class ExpressionCommandInfo:
+    expression: Expression
+    func: Callable
+
+
+class GrammarRecognizer(KeywordRecognizer):
+    def __init__(self, module_name: str, module: Module,
+                 commands: List[ExpressionCommandInfo], keywords: KeywordList,
+                 on_no_keywords: Callable, on_not_recognized: Callable):
+        super().__init__(module_name, module, keywords, on_no_keywords)
+
+        self._state: Optional[Assistant] = None
+
+        def make_expression(cmd: ExpressionCommandInfo):
+            def func(ts):
+                return cmd.func(module, self._state, ts)
+
+            return cmd.expression.to_parser().addParseAction(func)
+
+        self.jsgf_grammar = RootGrammar(
+            PublicRule(f'cmd-{i}', cmd.expression.to_jsgf())
+            for i, cmd in enumerate(commands))
+        self.parsing_grammar = pyparsing.Or(map(make_expression, commands))
+        self.on_not_recognized = on_not_recognized
+
+    def register(self, decoder: Decoder):
+        super().register(decoder)
+        decoder.register_grammar(self.module_name, self.jsgf_grammar)
+
+    def recognize_matched(self, state: Assistant, audio: bytes):
+        decoder = state.decoder
+        phrase = decoder.decode_grammar(self.module_name, audio)
+        if not phrase:
+            if self.on_not_recognized is not None:
+                self.on_not_recognized(self.module, state)
+            return
+
+        self._state = state  # The state will be accessed from parse actions
+        self.parsing_grammar.parseString(phrase)
+        self._state = None  # Delete reference
+
+
+class GrammarRecognizerFactory(KeywordRecognizerFactory):
+    def __init__(self):
+        super().__init__()
+        self._commands: List[ExpressionCommandInfo] = list()
+        self._on_not_recognized: Optional[Callable] = None
+
+    def add_command(self, expr: Union[str, Expression], func: Callable) -> ExpressionCommandInfo:
+        cmd = ExpressionCommandInfo(And(expr), func)
+        self._commands.append(cmd)
+        return cmd
+
+    def command(self, expr: Union[str, Expression]):
+        def decorator(func: Callable):
+            return self.add_command(expr, func)
+
+        return decorator
+
+    def not_recognized(self, func):
+        self._on_not_recognized = func
+
+    @property
+    def on_not_recognized(self):
+        return self._on_not_recognized
+
+    def create(self, module_name: str, module: Any):
+        return GrammarRecognizer(module_name, module,
+                                 list(self._commands), self.keyword_list,
+                                 self.on_no_keywords, self.on_not_recognized)

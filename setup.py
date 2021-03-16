@@ -21,7 +21,8 @@ setuptools.setup(
     install_requires=[
         'sounddevice',
         'pocketsphinx',
-        'pyjsgf'
+        'pyjsgf',
+        'pyparsing'
     ],
     python_requires='>=3.7',
 )
